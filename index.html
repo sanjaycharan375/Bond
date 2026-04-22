@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bond — Relationship Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #13131c;
+    --surface2: #1c1c2b;
+    --accent: #c084fc;
+    --accent2: #f472b6;
+    --gold: #fbbf24;
+    --text: #f0edf8;
+    --muted: #8b85a0;
+    --border: rgba(192, 132, 252, 0.15);
+    --glow: rgba(192, 132, 252, 0.25);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow-x: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  .cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--accent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%, -50%);
+    transition: width 0.2s, height 0.2s, background 0.2s;
+  }
+  .cursor-ring {
+    position: fixed;
+    width: 36px; height: 36px;
+    border: 1.5px solid rgba(192,132,252,0.5);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.12s ease, width 0.2s, height 0.2s;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.4;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.25rem 4rem;
+    background: rgba(10,10,15,0.7);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    color: var(--text);
+    text-decoration: none;
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--accent); }
+
+  .nav-links { display: flex; gap: 2.5rem; list-style: none; }
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    background: var(--accent);
+    color: #0a0a0f;
+    border: none;
+    padding: 0.6rem 1.4rem;
+    border-radius: 100px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 8px 24px var(--glow); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 7rem 2rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Mesh gradient orbs */
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+    animation: drift 12s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 600px; height: 600px; background: radial-gradient(circle, #7c3aed, transparent); top: -100px; left: -100px; }
+  .orb-2 { width: 500px; height: 500px; background: radial-gradient(circle, #db2777, transparent); bottom: -80px; right: -80px; animation-delay: -4s; }
+  .orb-3 { width: 400px; height: 400px; background: radial-gradient(circle, #4f46e5, transparent); top: 30%; right: 10%; animation-delay: -8s; }
+
+  @keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to { transform: translate(30px, 20px) scale(1.05); }
+  }
+
+  .hero-badge {
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    background: rgba(192,132,252,0.1);
+    border: 1px solid var(--border);
+    border-radius: 100px;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--accent);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.8s ease both;
+  }
+  .hero-badge::before { content: '◆'; font-size: 0.5rem; }
+
+  .hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(3.5rem, 8vw, 7rem);
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.8s 0.1s ease both;
+  }
+
+  .hero-title em {
+    font-style: italic;
+    color: transparent;
+    -webkit-text-stroke: 1.5px var(--accent);
+  }
+
+  .hero-sub {
+    font-size: 1.15rem;
+    color: var(--muted);
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 3rem;
+    font-weight: 300;
+    animation: fadeUp 0.8s 0.2s ease both;
+  }
+
+  .hero-actions {
+    display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center;
+    animation: fadeUp 0.8s 0.3s ease both;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    border: none;
+    padding: 0.9rem 2.2rem;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 600;
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 32px rgba(192,132,252,0.4); }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 0.9rem 2.2rem;
+    border-radius: 100px;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: 'DM Sans', sans-serif;
+    cursor: none;
+    transition: border-color 0.2s, background 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    backdrop-filter: blur(10px);
+  }
+  .btn-secondary:hover { border-color: var(--accent); background: rgba(192,132,252,0.07); }
+
+  /* Floating bond card visual */
+  .hero-visual {
+    margin-top: 5rem;
+    position: relative;
+    animation: fadeUp 0.8s 0.4s ease both;
+  }
+
+  .bond-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 1.75rem 2rem;
+    width: 380px;
+    max-width: 90vw;
+    text-align: left;
+    position: relative;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  .bond-users {
+    display: flex; align-items: center; gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .avatar {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border: 2px solid var(--bg);
+  }
+  .avatar-a { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; }
+  .avatar-b { background: linear-gradient(135deg, #db2777, #f472b6); color: white; margin-left: -10px; }
+  .bond-status {
+    margin-left: auto;
+    background: rgba(74,222,128,0.1);
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,0.25);
+    border-radius: 100px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.25rem 0.7rem;
+    letter-spacing: 0.05em;
+  }
+
+  .bond-names {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    color: var(--text);
+    margin-bottom: 1.25rem;
+  }
+  .bond-names span { color: var(--muted); font-size: 0.875rem; font-family: 'DM Sans'; font-style: normal; }
+
+  .insight-pill {
+    background: rgba(192,132,252,0.08);
+    border: 1px solid rgba(192,132,252,0.2);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.75rem;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+  }
+  .insight-pill .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+  }
+
+  .task-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.7rem 0.9rem;
+    background: var(--surface2);
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    font-size: 0.82rem;
+  }
+  .task-check {
+    width: 18px; height: 18px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .task-check.done { background: var(--accent); border-color: var(--accent); }
+  .task-check.done::after { content: '✓'; color: white; font-size: 0.65rem; font-weight: 700; }
+
+  .streak-bar {
+    margin-top: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .streak-num { color: var(--gold); font-weight: 700; font-size: 0.9rem; }
+  .streak-dots { display: flex; gap: 4px; }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--accent);
+  }
+  .dot.empty { background: var(--surface2); border: 1px solid var(--border); }
+
+  /* SECTION base */
+  section { padding: 7rem 2rem; }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .section-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--accent);
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 4vw, 3.2rem);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 1.25rem;
+  }
+  .section-sub {
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.7;
+    max-width: 520px;
+    font-weight: 300;
+  }
+
+  /* HOW IT WORKS */
+  .how-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+
+  .step-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem 1.75rem;
+    transition: transform 0.2s, border-color 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .step-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  .step-card:hover { transform: translateY(-4px); border-color: rgba(192,132,252,0.35); }
+  .step-card:hover::before { opacity: 1; }
+
+  .step-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 3rem;
+    color: rgba(192,132,252,0.15);
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+  .step-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .step-desc { color: var(--muted); font-size: 0.88rem; line-height: 1.6; }
+
+  /* FEATURES */
+  .features {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+  }
+
+  .feature-block {
+    padding: 3.5rem;
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.25s;
+  }
+  .feature-block:hover { background: rgba(192,132,252,0.04); }
+  .feature-block:nth-child(2n) { border-right: none; }
+  .feature-block:nth-last-child(-n+2) { border-bottom: none; }
+
+  .feature-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .feature-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  .feature-desc { color: var(--muted); font-size: 0.88rem; line-height: 1.65; }
+
+  /* DEMO / QUICK TEST */
+  .demo-section { text-align: center; }
+
+  .demo-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.5rem;
+    max-width: 640px;
+    margin: 3rem auto 0;
+    text-align: left;
+  }
+
+  .demo-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .field-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+
+  .field-input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field-input:focus { border-color: var(--accent); }
+
+  .field-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    font-family: 'DM Sans', sans-serif;
+    outline: none;
+    appearance: none;
+    transition: border-color 0.2s;
+  }
+  .field-select:focus { border-color: var(--accent); }
+  .field-select option { background: var(--surface2); }
+
+  .demo-result {
+    display: none;
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(192,132,252,0.06);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+  .demo-result.show { display: block; animation: fadeUp 0.4s ease; }
+
+  .result-row {
+    display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem;
+  }
+  .result-chip {
+    background: var(--surface2);
+    border-radius: 100px;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.78rem;
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .result-chip.strength { border-color: rgba(74,222,128,0.3); color: #4ade80; background: rgba(74,222,128,0.06); }
+  .result-chip.challenge { border-color: rgba(251,191,36,0.3); color: var(--gold); background: rgba(251,191,36,0.06); }
+  .result-chip.task { border-color: rgba(192,132,252,0.3); color: var(--accent); background: rgba(192,132,252,0.06); }
+
+  .loading-dots { display: none; }
+  .loading-dots span {
+    display: inline-block; width: 6px; height: 6px;
+    border-radius: 50%; background: var(--accent);
+    margin: 0 2px; animation: bounce 0.9s ease-in-out infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes bounce { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+
+  /* PRICING */
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 4rem;
+  }
+
+  .price-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 2.25rem;
+    transition: transform 0.2s;
+  }
+  .price-card.featured {
+    border-color: var(--accent);
+    background: linear-gradient(180deg, rgba(192,132,252,0.07) 0%, var(--surface) 100%);
+    position: relative;
+  }
+  .featured-badge {
+    position: absolute;
+    top: -12px; left: 50%; transform: translateX(-50%);
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.3rem 1rem;
+    border-radius: 100px;
+    white-space: nowrap;
+  }
+  .price-card:hover { transform: translateY(-3px); }
+
+  .price-tier { font-size: 0.75rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.75rem; }
+  .price-amount { font-family: 'Playfair Display', serif; font-size: 3rem; margin-bottom: 0.25rem; }
+  .price-amount span { font-family: 'DM Sans'; font-size: 1rem; color: var(--muted); }
+  .price-desc { color: var(--muted); font-size: 0.85rem; margin-bottom: 2rem; }
+
+  .price-features { list-style: none; margin-bottom: 2rem; }
+  .price-features li {
+    font-size: 0.875rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+    display: flex; gap: 0.6rem;
+    color: var(--muted);
+  }
+  .price-features li::before { content: '→'; color: var(--accent); }
+  .price-features li.active { color: var(--text); }
+
+  /* FOOTER */
+  footer {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 4rem 2rem 2rem;
+    text-align: center;
+  }
+  .footer-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    margin-bottom: 0.75rem;
+    color: var(--text);
+  }
+  .footer-logo span { color: var(--accent); }
+  .footer-tagline { color: var(--muted); font-size: 0.9rem; margin-bottom: 2.5rem; }
+  .footer-links {
+    display: flex; gap: 2rem; justify-content: center; flex-wrap: wrap;
+    list-style: none; margin-bottom: 3rem;
+  }
+  .footer-links a { color: var(--muted); text-decoration: none; font-size: 0.875rem; transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text); }
+  .footer-copy { color: rgba(139,133,160,0.5); font-size: 0.78rem; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Divider */
+  .divider {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--accent), transparent);
+    margin: 0 auto 2rem;
+  }
+
+  /* stats row */
+  .stats-row {
+    display: flex; gap: 3rem; justify-content: center; flex-wrap: wrap;
+    margin-top: 5rem;
+    padding-top: 3rem;
+    border-top: 1px solid var(--border);
+    animation: fadeUp 0.8s 0.5s ease both;
+  }
+  .stat { text-align: center; }
+  .stat-num {
+    font-family: 'Playfair Display', serif;
+    font-size: 2.5rem;
+    color: var(--text);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+  .stat-label { color: var(--muted); font-size: 0.8rem; margin-top: 0.3rem; }
+
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    .nav-links { display: none; }
+    .features-grid { grid-template-columns: 1fr; }
+    .feature-block { border-right: none; }
+    .feature-block:nth-last-child(-n+2) { border-bottom: 1px solid var(--border); }
+    .feature-block:last-child { border-bottom: none; }
+    .demo-row { grid-template-columns: 1fr; }
+    .stats-row { gap: 2rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cursor" id="cursor"></div>
+<div class="cursor-ring" id="cursorRing"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">Bond<span>.</span></a>
+  <ul class="nav-links">
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#demo">Try it</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <button class="nav-cta">Get the App</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="hero-badge">Relationship Intelligence Platform</div>
+
+  <h1 class="hero-title">
+    Every bond<br>deserves to <em>grow</em>
+  </h1>
+
+  <p class="hero-sub">
+    Bond uses AI to understand how two people relate — their communication styles,
+    emotional patterns, friction points — and gives you daily tasks to actually improve.
+  </p>
+
+  <div class="hero-actions">
+    <a href="#demo" class="btn-primary">Try for free →</a>
+    <a href="#how" class="btn-secondary">See how it works</a>
+  </div>
+
+  <div class="hero-visual">
+    <div class="bond-card">
+      <div class="bond-users">
+        <div class="avatar avatar-a">A</div>
+        <div class="avatar avatar-b">R</div>
+        <div class="bond-status">Active</div>
+      </div>
+      <div class="bond-names">
+        Aryan & Riya <span>— bonded 42 days</span>
+      </div>
+      <div class="insight-pill">
+        <div class="label">💚 Strength</div>
+        You both prefer processing emotions before discussing conflict — this gives you rare clarity when you do talk.
+      </div>
+      <div class="task-item">
+        <div class="task-check done"></div>
+        <span>Share one appreciation before sleeping tonight</span>
+      </div>
+      <div class="task-item">
+        <div class="task-check"></div>
+        <span>Ask how today felt — not how today went</span>
+      </div>
+      <div class="streak-bar">
+        <span style="font-size:0.75rem; color:var(--muted)">Streak</span>
+        <span class="streak-num">🔥 7</span>
+        <div class="streak-dots">
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+          <div class="dot"></div><div class="dot empty"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat"><div class="stat-num">10k+</div><div class="stat-label">Active Bonds</div></div>
+    <div class="stat"><div class="stat-num">94%</div><div class="stat-label">Feel closer in 30 days</div></div>
+    <div class="stat"><div class="stat-num">3.2M</div><div class="stat-label">Tasks completed</div></div>
+    <div class="stat"><div class="stat-num">4.8★</div><div class="stat-label">App Store rating</div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section id="how">
+  <div class="container">
+    <div class="section-label">The Process</div>
+    <h2 class="section-title">Simple to start.<br>Built to last.</h2>
+    <p class="section-sub">A Bond takes two minutes to create and a lifetime to develop.</p>
+    <div class="how-grid">
+      <div class="step-card">
+        <div class="step-num">01</div>
+        <div class="step-title">Create your account</div>
+        <p class="step-desc">Sign up and tell Bond about yourself — your communication style, how you handle conflict, what matters most to you emotionally.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">02</div>
+        <div class="step-title">Invite your person</div>
+        <p class="step-desc">Send a unique link to your partner, best friend, or family member. They join and complete their own profile independently.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">03</div>
+        <div class="step-title">AI analyses your Bond</div>
+        <p class="step-desc">Bond maps your emotional dynamics, identifies real strengths and friction points, and builds a relationship intelligence profile unique to you two.</p>
+      </div>
+      <div class="step-card">
+        <div class="step-num">04</div>
+        <div class="step-title">Get daily tasks</div>
+        <p class="step-desc">Every day you receive a new micro-task — specific to your pair. Not generic advice. Actions that shift real patterns over time.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section id="features" class="features" style="padding:0">
+  <div class="container" style="padding: 5rem 2rem;">
+    <div style="text-align:center; margin-bottom: 1rem;">
+      <div class="section-label">What you get</div>
+      <h2 class="section-title">Everything a relationship<br>actually needs</h2>
+    </div>
+  </div>
+  <div class="features-grid">
+    <div class="feature-block">
+      <div class="feature-icon" style="background: rgba(124,58,237,0.15);">🔗</div>
+      <div class="feature-title">Persistent Bonds</div>
+      <p class="feature-desc">Unlike a one-time quiz, your Bond lives permanently. It stores history, learns patterns, and gets smarter about your relationship over time.</p>
+    </div>
+    <div class="feature-block">
+      <div class="feature-icon" style="background: rgba(219,39,119,0.15);">🧠</div>
+      <div class="feature-title">Behavioural Intelligence</div>
+      <p class="feature-desc">No horoscopes. No vague scores. Bond analyses real behavioural patterns — how you each process emotion, conflict, affection, and distance.</p>
+    </div>
+    <div class="feature-block">
+      <div class="feature-icon" style="background: rgba(74,222,128,0.12);">✅</div>
+      <div class="feature-title">Daily Micro-Tasks</div>
+      <p class="feature-desc">Small, specific, doable. Designed to build connection through consistent action — not big gestures that never happen.</p>
+    </div>
+    <div class="feature-block">
+      <div class="feature-icon" style="background: rgba(251,191,36,0.12);">🔥</div>
+      <div class="feature-title">Streaks & Progress</div>
+      <p class="feature-desc">Track completed tasks, maintain streaks, and watch your relationship grow — measurable improvement that keeps you coming back.</p>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo" class="demo-section">
+  <div class="container">
+    <div class="divider"></div>
+    <div class="section-label">Quick Compatibility Preview</div>
+    <h2 class="section-title">See Bond in action</h2>
+    <p class="section-sub" style="margin: 0 auto 0;">
+      Answer a few quick questions and get a sample of what Bond reveals. This is a simplified preview — the full app goes much deeper.
+    </p>
+    <div class="demo-box">
+      <div class="demo-row">
+        <div>
+          <div class="field-label">Your communication style</div>
+          <select class="field-select" id="styleA">
+            <option value="">Select...</option>
+            <option value="expressive">Expressive — I say what I feel</option>
+            <option value="reserved">Reserved — I process internally</option>
+            <option value="analytical">Analytical — I need logic first</option>
+            <option value="avoidant">Avoidant — I need space first</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Their communication style</div>
+          <select class="field-select" id="styleB">
+            <option value="">Select...</option>
+            <option value="expressive">Expressive — they say what they feel</option>
+            <option value="reserved">Reserved — they process internally</option>
+            <option value="analytical">Analytical — they need logic first</option>
+            <option value="avoidant">Avoidant — they need space first</option>
+          </select>
+        </div>
+      </div>
+      <div class="demo-row">
+        <div>
+          <div class="field-label">Your conflict approach</div>
+          <select class="field-select" id="conflictA">
+            <option value="">Select...</option>
+            <option value="direct">Direct — address it immediately</option>
+            <option value="delay">I delay but come back to it</option>
+            <option value="deflect">I deflect with humour</option>
+            <option value="withdraw">I withdraw and need time</option>
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Their conflict approach</div>
+          <select class="field-select" id="conflictB">
+            <option value="">Select...</option>
+            <option value="direct">Direct — address it immediately</option>
+            <option value="delay">They delay but come back</option>
+            <option value="deflect">They deflect with humour</option>
+            <option value="withdraw">They withdraw and need time</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn-primary" style="width:100%" onclick="runDemo()">Generate Preview →</button>
+      <div class="loading-dots" id="loadingDots" style="text-align:center; margin-top:1rem;">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="demo-result" id="demoResult">
+        <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:600; margin-bottom:1rem;">💚 Strengths</div>
+        <div class="result-row" id="strengthsRow"></div>
+        <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--gold); font-weight:600; margin: 1rem 0 0.5rem;">⚡ Challenges</div>
+        <div class="result-row" id="challengesRow"></div>
+        <div style="font-size:0.72rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--accent); font-weight:600; margin: 1rem 0 0.5rem;">🛠 Today's Task</div>
+        <div class="result-row" id="tasksRow"></div>
+        <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border); text-align:center;">
+          <p style="font-size:0.82rem; color:var(--muted); margin-bottom:1rem;">This is a sample. The full Bond experience is 10× deeper and evolves over time.</p>
+          <a href="#" class="btn-primary" style="font-size:0.9rem">Create your Bond →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section id="pricing">
+  <div class="container">
+    <div style="text-align:center;">
+      <div class="section-label">Plans</div>
+      <h2 class="section-title">Start free. Go deeper<br>when you're ready.</h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="price-tier">Free</div>
+        <div class="price-amount">₹0</div>
+        <div class="price-desc">Try Bond forever, no card needed</div>
+        <ul class="price-features">
+          <li class="active">1 active Bond</li>
+          <li class="active">Core compatibility insights</li>
+          <li class="active">5 tasks per week</li>
+          <li>Task history</li>
+          <li>Streaks & progress</li>
+          <li>Multiple bonds</li>
+        </ul>
+        <a href="#" class="btn-secondary" style="display:block; text-align:center;">Get started free</a>
+      </div>
+      <div class="price-card featured">
+        <div class="featured-badge">Most popular</div>
+        <div class="price-tier">Pro</div>
+        <div class="price-amount">₹299 <span>/ month</span></div>
+        <div class="price-desc">For people serious about their relationships</div>
+        <ul class="price-features">
+          <li class="active">Unlimited Bonds</li>
+          <li class="active">Deep behavioural analysis</li>
+          <li class="active">Daily tasks (no limit)</li>
+          <li class="active">Full task history & streaks</li>
+          <li class="active">Weekly progress reports</li>
+          <li>AI relationship chat (soon)</li>
+        </ul>
+        <a href="#" class="btn-primary" style="display:block; text-align:center;">Start Pro trial</a>
+      </div>
+      <div class="price-card">
+        <div class="price-tier">Couples</div>
+        <div class="price-amount">₹499 <span>/ month</span></div>
+        <div class="price-desc">Pro for both people in your Bond</div>
+        <ul class="price-features">
+          <li class="active">Everything in Pro</li>
+          <li class="active">Shared Bond dashboard</li>
+          <li class="active">Joint progress tracking</li>
+          <li class="active">AI relationship advisor (soon)</li>
+          <li class="active">Priority support</li>
+          <li class="active">Early feature access</li>
+        </ul>
+        <a href="#" class="btn-secondary" style="display:block; text-align:center;">Start together</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding: 6rem 2rem; text-align: center; background: var(--surface); border-top: 1px solid var(--border);">
+  <div class="container">
+    <div class="divider"></div>
+    <h2 class="section-title">The relationship you want<br>starts with one <em style="color:var(--accent); font-style:italic">action</em></h2>
+    <p style="color:var(--muted); max-width: 420px; margin: 1rem auto 2.5rem; line-height: 1.7;">No therapy required. No awkward conversations. Just two people, one Bond, and something small to do every day.</p>
+    <a href="#" class="btn-primary" style="font-size:1.05rem">Create your first Bond →</a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">Bond<span>.</span></div>
+  <p class="footer-tagline">Relationship intelligence for real people.</p>
+  <ul class="footer-links">
+    <li><a href="#">Home</a></li>
+    <li><a href="#">Privacy</a></li>
+    <li><a href="#">Terms</a></li>
+    <li><a href="#">Support</a></li>
+    <li><a href="#">Blog</a></li>
+  </ul>
+  <p class="footer-copy">© 2024 Bond. For self-reflection and relationship improvement only. Not a substitute for professional counseling.</p>
+</footer>
+
+<script>
+// Custom cursor
+const cursor = document.getElementById('cursor');
+const ring = document.getElementById('cursorRing');
+let mouseX=0,mouseY=0,ringX=0,ringY=0;
+document.addEventListener('mousemove', e => { mouseX=e.clientX; mouseY=e.clientY; cursor.style.left=mouseX+'px'; cursor.style.top=mouseY+'px'; });
+function animateRing(){ringX+=(mouseX-ringX)*0.12; ringY+=(mouseY-ringY)*0.12; ring.style.left=ringX+'px'; ring.style.top=ringY+'px'; requestAnimationFrame(animateRing);}
+animateRing();
+
+// Demo logic
+const insights = {
+  expressive_expressive: {
+    strengths: ["Natural emotional fluency", "Fast conflict resolution", "Shared vulnerability"],
+    challenges: ["Simultaneous venting overload", "Escalation during stress"],
+    tasks: ["Take turns: 5 min talking, 5 min just listening"]
+  },
+  expressive_reserved: {
+    strengths: ["Complementary processing styles", "Balance between action & reflection"],
+    challenges: ["Pace mismatch in emotional moments", "Reserved partner may feel pressured"],
+    tasks: ["Text one feeling today — let them reply when ready"]
+  },
+  reserved_expressive: {
+    strengths: ["Expressive partner draws you out gently", "Emotional range together"],
+    challenges: ["Expressive partner may feel unheard", "Withdrawal can feel like rejection"],
+    tasks: ["Verbal check-in: 'I'm processing, I'll share tonight at 8'"]
+  },
+  reserved_reserved: {
+    strengths: ["Mutual space and understanding", "Low drama baseline"],
+    challenges: ["Feelings can go unsaid too long", "Distance can form silently"],
+    tasks: ["Ask: 'What's one thing on your mind you haven't said?'"]
+  },
+  analytical_avoidant: {
+    strengths: ["Low reactivity during conflict", "Thoughtful responses"],
+    challenges: ["Avoidant partner may stonewall under pressure", "Analysis can feel cold"],
+    tasks: ["Agree on a 30-min cool-off rule before discussing any issue"]
+  }
+};
+
+function runDemo() {
+  const sA = document.getElementById('styleA').value;
+  const sB = document.getElementById('styleB').value;
+  const cA = document.getElementById('conflictA').value;
+  const cB = document.getElementById('conflictB').value;
+
+  if (!sA || !sB || !cA || !cB) { alert('Please fill in all four fields to see your preview.'); return; }
+
+  const loadingDots = document.getElementById('loadingDots');
+  const result = document.getElementById('demoResult');
+  loadingDots.style.display = 'block';
+  result.classList.remove('show');
+
+  setTimeout(() => {
+    loadingDots.style.display = 'none';
+    const key = `${sA}_${sB}`;
+    const data = insights[key] || insights['expressive_reserved'];
+
+    document.getElementById('strengthsRow').innerHTML = data.strengths.map(s => `<span class="result-chip strength">${s}</span>`).join('');
+    document.getElementById('challengesRow').innerHTML = data.challenges.map(c => `<span class="result-chip challenge">${c}</span>`).join('');
+    document.getElementById('tasksRow').innerHTML = data.tasks.map(t => `<span class="result-chip task">${t}</span>`).join('');
+
+    result.classList.add('show');
+  }, 1800);
+}
+
+// Intersection observer for fade-ins
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.style.animation = 'fadeUp 0.7s ease both'; });
+}, { threshold: 0.1 });
+document.querySelectorAll('.step-card, .feature-block, .price-card').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
